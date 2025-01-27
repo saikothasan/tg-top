@@ -55,8 +55,12 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 }
 
-export default async function Post({ params, session }: { params: { id: string }; session: any }) {
+export default async function Post({ params }: { params: { id: string } }) {
+  const supabase = createClient()
   const post = await getPost(params.id)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
   if (!post) {
     return (
@@ -102,7 +106,7 @@ export default async function Post({ params, session }: { params: { id: string }
         </div>
       </div>
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-        {post.user_id === session?.user.id && (
+        {session && post.user_id === session.user.id && (
           <Link
             href={`/post/${post.id}/edit`}
             className="inline-block bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out mr-4"
@@ -117,7 +121,7 @@ export default async function Post({ params, session }: { params: { id: string }
           Back to Forum
         </Link>
       </div>
-      <div className="mt-8">
+      <div className="mt-8 px-6 py-4">
         <h2 className="text-2xl font-semibold mb-4">Comments</h2>
         <CommentForm postId={post.id} />
         <div className="mt-4 space-y-4">
