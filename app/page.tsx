@@ -41,7 +41,7 @@ async function getForumPosts(page = 1, pageSize = 10, searchQuery = "", category
     return { posts: [], totalCount: 0 }
   }
 
-  return { posts: data, totalCount: count }
+  return { posts: data, totalCount: count ?? 0 }
 }
 
 async function getCategories() {
@@ -126,7 +126,7 @@ export default async function Home({
           ))}
         </ul>
       </div>
-      <Pagination totalCount={totalCount} pageSize={10} currentPage={page} />
+      <Pagination totalCount={totalCount ?? 0} pageSize={10} currentPage={page} />
     </div>
   )
 }
