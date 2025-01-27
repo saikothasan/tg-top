@@ -12,13 +12,16 @@ export default function VerifyEmail() {
 
   useEffect(() => {
     if (token) {
-      verifyEmail(token).then(() => {
-        setMessage("Your email has been verified successfully!")
-        setTimeout(() => router.push("/"), 3000)
-      })
-      catch((error) =>
-      setMessage(`Failed to verify email: ${error.message}`)
-      )
+      verifyEmail(token)
+        .then(() => {
+          setMessage("Your email has been verified successfully!")
+          setTimeout(() => {
+            router.push("/")
+          }, 3000)
+        })
+        .catch((error) => {
+          setMessage(`Failed to verify email: ${error.message}`)
+        })
     } else {
       setMessage("Invalid verification link")
     }
