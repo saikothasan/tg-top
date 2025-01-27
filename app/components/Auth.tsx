@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { createClient } from "../../utils/supabase"
 import { useRouter } from "next/navigation"
-import { createEmailVerificationToken, sendVerificationEmail } from "@/utils/email"
+import { createEmailVerificationToken } from "../actions"
 
 export default function Auth() {
   const [email, setEmail] = useState("")
@@ -24,8 +24,7 @@ export default function Auth() {
         const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
         if (data.user) {
-          const token = await createEmailVerificationToken(data.user.id)
-          await sendVerificationEmail(email, token)
+          await createEmailVerificationToken(data.user.id)
           setMessage("Check your email for the verification link!")
         }
       } else {
