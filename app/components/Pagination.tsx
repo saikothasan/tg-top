@@ -10,7 +10,7 @@ interface PaginationProps {
 }
 
 export default function Pagination({ totalCount, pageSize, currentPage }: PaginationProps) {
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
   const searchParams = useSearchParams()
   const search = searchParams.get("search") || ""
 
