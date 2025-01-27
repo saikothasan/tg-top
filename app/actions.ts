@@ -2,8 +2,7 @@
 
 import { createClient } from "../utils/supabase"
 import { revalidatePath } from "next/cache"
-import { randomBytes } from "crypto"
-import { sendVerificationEmail } from "../utils/smtp"
+import CryptoJS from "crypto-js"
 
 export async function submitPost(data: {
   title: string
@@ -74,45 +73,44 @@ export async function submitComment(data: {
 }
 
 export async function createEmailVerificationToken(userId: string) {
-  const supabase = createClient()
-  const token = randomBytes(32).toString("hex")
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
-
-  const { error } = await supabase
-    .from("email_verification_tokens")
-    .insert({ user_id: userId, token, expires_at: expiresAt })
-
-  if (error) {
-    console.error("Error creating email verification token:", error)
-    throw new Error("Failed to create email verification token")
+  const tokenData = {
+    userId: userId,
+    timestamp: Date.now(),
   }
+  const token = CryptoJS.AES.encrypt(JSON.stringify(tokenData), process.env.TOKEN_SECRET!).toString()
+
+  // In a real-world scenario, you might want to store this token in the database
+  // and associate it with the user for additional security checks
 
   return token
 }
 
 export async function verifyEmail(token: string) {
   const supabase = createClient()
-  const { data, error } = await supabase
-    .from("email_verification_tokens")
-    .select("user_id")
-    .eq("token", token)
-    .gt("expires_at", new Date().toISOString())
-    .single()
 
-  if (error || !data) {
+  try {
+    const decryptedBytes = CryptoJS.AES.decrypt(token, process.env.TOKEN_SECRET!)
+    const decryptedData = JSON.parse(decryptedBytes.toString(CryptoJS.enc.Utf8))
+
+    const { userId, timestamp } = decryptedData
+    const tokenAge = Date.now() - timestamp
+    const tokenExpirationTime = 24 * 60 * 60 * 1000 // 24 hours
+
+    if (tokenAge > tokenExpirationTime) {
+      throw new Error("Token has expired")
+    }
+
+    const { error: updateError } = await supabase.from("users").update({ is_email_verified: true }).eq("id", userId)
+
+    if (updateError) {
+      console.error("Error updating user:", updateError)
+      throw new Error("Failed to verify email")
+    }
+
+    revalidatePath("/")
+  } catch (error) {
     console.error("Error verifying email:", error)
     throw new Error("Invalid or expired token")
   }
-
-  const { error: updateError } = await supabase.auth.updateUser({ data: { is_email_verified: true } })
-
-  if (updateError) {
-    console.error("Error updating user:", updateError)
-    throw new Error("Failed to verify email")
-  }
-
-  await supabase.from("email_verification_tokens").delete().eq("token", token)
-
-  revalidatePath("/")
 }
 
