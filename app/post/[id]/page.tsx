@@ -7,7 +7,31 @@ import CommentForm from "../../components/CommentForm"
 
 export const revalidate = 0
 
-async function getPost(id: string) {
+interface CommentType {
+  id: string
+  content: string
+  created_at: string
+  user_id: string
+}
+
+interface PostType {
+  id: string
+  title: string
+  description: string
+  link: string
+  type: string
+  user_id: string
+  category_id: string
+  upvotes: number
+  downvotes: number
+  created_at: string
+  categories: {
+    name: string
+  }
+  comments?: CommentType[]
+}
+
+async function getPost(id: string): Promise<PostType | null> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("forum_posts")
@@ -125,7 +149,7 @@ export default async function Post({ params }: { params: { id: string } }) {
         <h2 className="text-2xl font-semibold mb-4">Comments</h2>
         <CommentForm postId={post.id} />
         <div className="mt-4 space-y-4">
-          {post.comments?.map((comment) => (
+          {post.comments?.map((comment: CommentType) => (
             <Comment key={comment.id} comment={comment} />
           ))}
         </div>
